@@ -13,7 +13,7 @@ import (
 var KEY_SIZE_BYTES = 2
 var VALUE_SIZE_BYTES = 4
 
-func putKey(keyToByteOffset map[string]int64, file *os.File, key, value string) error {
+func PutKey(keyToByteOffset map[string]int64, file *os.File, key, value string) error {
 	if len(key) > math.MaxUint16 {
 		return errors.New("key size exceeds maximum for 2^16 (65535 bytes)")
 	}
@@ -44,7 +44,7 @@ func putKey(keyToByteOffset map[string]int64, file *os.File, key, value string) 
 	return nil
 }
 
-func getKey(keyToByteOffset map[string]int64, file *os.File, key string) (string, error) {
+func GetKey(keyToByteOffset map[string]int64, file *os.File, key string) (string, error) {
 	offset, ok := keyToByteOffset[key]
 	if !ok {
 		return "", errors.New("Value not in memory")
@@ -118,12 +118,12 @@ func main() {
 	}
 
 	file, err = os.OpenFile(filePath, os.O_APPEND, 0644)
-	putKey(keyToByteOffset, file, "100", "{ value1: 'value1', value2: 'value2' }")
-	putKey(keyToByteOffset, file, "abcd-efgh-jklm-pqrs", "{ userId: 100 }")
+	PutKey(keyToByteOffset, file, "100", "{ value1: 'value1', value2: 'value2' }")
+	PutKey(keyToByteOffset, file, "abcd-efgh-jklm-pqrs", "{ userId: 100 }")
 
-	val, err := getKey(keyToByteOffset, file, "abcd-efgh-jklm-pqrs")
+	val, err := GetKey(keyToByteOffset, file, "abcd-efgh-jklm-pqrs")
 	fmt.Printf("%s\n", val)
 
-	val, err = getKey(keyToByteOffset, file, "100")
+	val, err = GetKey(keyToByteOffset, file, "100")
 	fmt.Printf("%s\n", val)
 }
