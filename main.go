@@ -45,36 +45,50 @@ func putKey(keyToByteOffset map[string]int64, file *os.File, key, value string) 
 }
 
 func getKey(keyToByteOffset map[string]int64, file *os.File, key string) (string, error) {
-	val, ok := keyToByteOffset[key]
+	offset, ok := keyToByteOffset[key]
 	if !ok {
 		return "", errors.New("Value not in memory")
 	}
 
 	// whence -> from where do i start reading/writing bytes?
-	_, err := file.Seek(val, io.SeekStart)
+	_, err := file.Seek(offset, io.SeekStart)
 	if err != nil {
 		log.Fatalf("Failed to seek to offset: %v", err)
 	}
 
-	keySizeBuffer := make([]byte, KEY_SIZE_BYTES)
+	keySizeBuffer := make([]byte, KEY_SIZE_BYTES) // 2 bytes -> uint16
 	_, err = file.Read(keySizeBuffer)
 	if err != nil {
 		log.Fatalf("Failed to read key size: %v", err)
 	}
 
-	keySize := binary.BigEndian.Uint16(keySizeBuffer)
+	keySize := binary.BigEndian.Uint16(keySizeBuffer) // bytes -> big endian encoding
 
 	fmt.Printf("keySize=%d\n", keySize)
 
 	valueSizeBuffer := make([]byte, VALUE_SIZE_BYTES)
 	_, err = file.Read(valueSizeBuffer)
 	if err != nil {
-		log.Fatalf("Failed to read key size: %v", err)
+		log.Fatalf("Failed to read content size: %v", err)
 	}
 
 	valueSize := binary.BigEndian.Uint32(valueSizeBuffer)
 
 	fmt.Printf("valueSize=%d\n", valueSize)
+
+	keyReadBuffer := make([]byte, keySize)
+	_, err = file.Read(keyReadBuffer)
+	if err != nil {
+		log.Fatalf("Failed to read key: %v", err)
+	}
+	fmt.Printf("key=%s\n", keyReadBuffer)
+
+	valueReadBuffer := make([]byte, valueSize)
+	_, err = file.Read(valueReadBuffer)
+	if err != nil {
+		log.Fatalf("Failed to read value: %v", err)
+	}
+	fmt.Printf("key=%s\n", valueReadBuffer)
 
 	return "", nil
 }
@@ -104,7 +118,12 @@ func main() {
 	}
 
 	file, err = os.OpenFile(filePath, os.O_APPEND, 0644)
-	putKey(keyToByteOffset, file, "100", "{ value1: 'value1', value2: 'value2}")
-	val, err := getKey(keyToByteOffset, file, "100")
+	putKey(keyToByteOffset, file, "100", "{ value1: 'value1', value2: 'value2' }")
+	putKey(keyToByteOffset, file, "abcd-efgh-jklm-pqrs", "{ userId: 100 }")
+
+	val, err := getKey(keyToByteOffset, file, "abcd-efgh-jklm-pqrs")
+	fmt.Printf("%s\n", val)
+
+	val, err = getKey(keyToByteOffset, file, "100")
 	fmt.Printf("%s\n", val)
 }
