@@ -56,8 +56,9 @@ func New() (*Store, error) {
 }
 
 func (s *Store) PutKey(key, value string) error {
-	s.ActiveSegment.mu.Lock()
+	s.mu.Lock()
 
+	// TODO: get the real size of whole segment
 	totalSize := KEY_SIZE_BYTES + VALUE_SIZE_BYTES + len(key) + len(value)
 	if totalSize > math.MaxInt64 {
 		s.ActiveSegment.file.Close()
@@ -65,15 +66,14 @@ func (s *Store) PutKey(key, value string) error {
 		activeSegment, _ := s.newSegment("segment")
 		s.ActiveSegment = activeSegment
 	}
-	s.ActiveSegment.mu.Unlock()
 
-	s.ActiveSegment.mu.Lock()
-	err := PutKey(s.ActiveSegment.keyToOffsetMap, s.ActiveSegment.file, key, value)
-	s.ActiveSegment.mu.Unlock()
-	if err != nil {
-		return err
-	}
-	return nil
+	currentActiveSeg := s.ActiveSegment
+	currentActiveSeg.mu.Lock()
+	defer s.ActiveSegment.mu.Unlock()
+	s.mu.Unlock() // !!! we can only unlock once we secured the active segment
+
+	err := PutKey(currentActiveSeg.keyToOffsetMap, currentActiveSeg.file, key, value)
+	return err
 }
 
 func (s *Store) GetKey(key string) (string, error) {
