@@ -13,15 +13,16 @@ import (
 var KEY_SIZE_BYTES = 2
 var VALUE_SIZE_BYTES = 4
 
-func PutKey(keyToByteOffset map[string]int64, file *os.File, key, value string) error {
+func PutKey(keyToByteOffset map[string]int64, file *os.File, key, value string) (uint64, error) {
 	if len(key) > math.MaxUint16 {
-		return errors.New("key size exceeds maximum for 2^16 (65535 bytes)")
+		return 0, errors.New("key size exceeds maximum for 2^16 (65535 bytes)")
 	}
 	if len(value) > math.MaxUint32 {
-		return errors.New("value size exceeds maximum 2^32 (4GB)")
+		return 0, errors.New("value size exceeds maximum 2^32 (4GB)")
 	}
 
-	buffer := make([]byte, 6+len(key)+len(value)) // 2 (key) + 4 (value) + key/value contents' size
+	totalSize := 6 + len(key) + len(value)
+	buffer := make([]byte, totalSize) // 2 (key) + 4 (value) + key/value contents' size
 	binary.BigEndian.PutUint16(buffer[0:2], uint16(len(key)))
 	binary.BigEndian.PutUint32(buffer[2:6], uint32(len(value)))
 
@@ -41,7 +42,7 @@ func PutKey(keyToByteOffset map[string]int64, file *os.File, key, value string) 
 	}
 	keyToByteOffset[key] = startPos
 	fmt.Printf("written: %d with startingPos: %d\n", bytesWritten, startPos)
-	return nil
+	return uint64(totalSize), nil
 }
 
 func GetKey(keyToByteOffset map[string]int64, file *os.File, key string) (string, error) {

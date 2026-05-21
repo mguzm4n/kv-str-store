@@ -3,20 +3,25 @@ package main
 import (
 	"errors"
 	"fmt"
-	"math"
 	"os"
 	"sync"
+	"sync/atomic"
 )
 
 var KEY_SIZE_BYTES = 2
 var VALUE_SIZE_BYTES = 4
 
-var SEGMENT_CAPACITY = 6
+const (
+	KB               = 1 << 10
+	MB               = 1 << 20
+	SEGMENT_CAPACITY = 64 * MB
+)
 
 type Segment struct {
 	mu             sync.RWMutex
 	keyToOffsetMap map[string]int64
 	file           *os.File
+	size           int64
 }
 
 type Store struct {
@@ -58,9 +63,7 @@ func New() (*Store, error) {
 func (s *Store) PutKey(key, value string) error {
 	s.mu.Lock()
 
-	// TODO: get the real size of whole segment
-	totalSize := KEY_SIZE_BYTES + VALUE_SIZE_BYTES + len(key) + len(value)
-	if totalSize > math.MaxInt64 {
+	if atomic.LoadInt64(&s.ActiveSegment.size) > SEGMENT_CAPACITY { // soft limit - can be an outdated check immediately after this instruction on multiple putKeys
 		s.ActiveSegment.file.Close()
 		s.Segments = append(s.Segments, s.ActiveSegment)
 		activeSegment, _ := s.newSegment("segment")
@@ -69,11 +72,15 @@ func (s *Store) PutKey(key, value string) error {
 
 	currentActiveSeg := s.ActiveSegment
 	currentActiveSeg.mu.Lock()
-	defer s.ActiveSegment.mu.Unlock()
+	defer currentActiveSeg.mu.Unlock()
 	s.mu.Unlock() // !!! we can only unlock once we secured the active segment
 
-	err := PutKey(currentActiveSeg.keyToOffsetMap, currentActiveSeg.file, key, value)
-	return err
+	nBytes, err := PutKey(currentActiveSeg.keyToOffsetMap, currentActiveSeg.file, key, value)
+	if err != nil {
+		return err
+	}
+	atomic.AddInt64(&currentActiveSeg.size, int64(nBytes))
+	return nil
 }
 
 func (s *Store) GetKey(key string) (string, error) {
