@@ -2,8 +2,6 @@ package main
 
 import (
 	"errors"
-	"fmt"
-	"os"
 	"sync"
 	"sync/atomic"
 )
@@ -17,19 +15,9 @@ type Store struct {
 	ActiveSegment *Segment
 }
 
-func (s *Store) newSegment(filename string) (*Segment, error) {
-	segment := &Segment{
-		keyToOffsetMap: make(map[string]int64),
-	}
-	s.mu.RLock()
-	fname := fmt.Sprintf("%s-%d", filename, len(s.Segments))
-	s.mu.RUnlock()
-	f, err := os.OpenFile(fname, os.O_APPEND|os.O_CREATE, 0644)
-	if err != nil {
-		return nil, errors.New("Couldn't create new segment")
-	}
-	segment.file = f
-	return segment, nil
+func (s *Store) newSegment() (*Segment, error) {
+	size := len(s.Segments) // !!! assume we hold the store lock
+	return NewSegment("segment", size)
 }
 
 func New() (*Store, error) {
@@ -37,7 +25,7 @@ func New() (*Store, error) {
 	store.Segments = make([]*Segment, 0)
 	// TODO: recover state from disk
 
-	active, err := store.newSegment("segment")
+	active, err := store.newSegment()
 	if err != nil {
 		return nil, errors.New("Couldn't bootstrap the store")
 	}
@@ -53,7 +41,7 @@ func (s *Store) PutKey(key, value string) error {
 	if atomic.LoadInt64(&s.ActiveSegment.size) > SEGMENT_CAPACITY { // soft limit - can be an outdated check immediately after this instruction on multiple putKeys
 		s.ActiveSegment.file.Close() // not close but mark as read only
 		s.Segments = append(s.Segments, s.ActiveSegment)
-		activeSegment, _ := s.newSegment("segment")
+		activeSegment, _ := s.newSegment()
 		s.ActiveSegment = activeSegment
 	}
 

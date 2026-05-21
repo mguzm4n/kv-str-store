@@ -2,6 +2,7 @@ package main
 
 import (
 	"errors"
+	"fmt"
 	"os"
 	"sync"
 )
@@ -17,6 +18,21 @@ type Segment struct {
 	keyToOffsetMap map[string]int64
 	file           *os.File
 	size           int64
+}
+
+func NewSegment(basename string, correlative int) (*Segment, error) {
+	fname := fmt.Sprintf("%s-%d", basename, correlative)
+
+	segment := &Segment{
+		keyToOffsetMap: make(map[string]int64),
+	}
+
+	f, err := os.OpenFile(fname, os.O_APPEND|os.O_CREATE, 0644)
+	if err != nil {
+		return nil, errors.New("Couldn't create new segment")
+	}
+	segment.file = f
+	return segment, nil
 }
 
 func (s *Segment) Lookup(key string) (string, error) {
