@@ -83,22 +83,22 @@ func (s *Store) PutKey(key, value string) error {
 	return nil
 }
 
+func (s *Segment) Lookup(key string) (string, error) {
+	s.mu.RLock()
+	defer s.mu.RUnlock()
+	offset, ok := s.keyToOffsetMap[key]
+	if !ok {
+		return "", errors.New("No value found")
+	}
+	return GetKey(s.keyToOffsetMap, s.file, key, offset)
+}
+
 func (s *Store) GetKey(key string) (string, error) {
 	s.mu.RLock()
 	activeSegment := s.ActiveSegment
 	s.mu.RUnlock()
 
-	lookup := func(segment *Segment, key string) (string, error) {
-		segment.mu.RLock()
-		defer segment.mu.RUnlock()
-		offset, ok := segment.keyToOffsetMap[key]
-		if !ok {
-			return "", errors.New("No value found")
-		}
-		return GetKey(segment.keyToOffsetMap, segment.file, key, offset)
-	}
-
-	val, err := lookup(activeSegment, key)
+	val, err := activeSegment.Lookup(key)
 	if err == nil {
 		return val, nil
 	}
@@ -107,7 +107,7 @@ func (s *Store) GetKey(key string) (string, error) {
 	defer s.mu.RUnlock()
 	for i := len(s.Segments) - 1; i >= 0; i-- {
 		segment := s.Segments[i]
-		val, err := lookup(segment, key)
+		val, err := segment.Lookup(key)
 		if err == nil {
 			return val, nil
 		}
