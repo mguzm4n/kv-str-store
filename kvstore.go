@@ -85,8 +85,8 @@ func (s *Store) PutKey(key, value string) error {
 
 func (s *Segment) Lookup(key string) (string, error) {
 	s.mu.RLock()
-	defer s.mu.RUnlock()
 	offset, ok := s.keyToOffsetMap[key]
+	s.mu.RUnlock() // multiple reads for a file is safe at os-level
 	if !ok {
 		return "", errors.New("No value found")
 	}
@@ -96,7 +96,7 @@ func (s *Segment) Lookup(key string) (string, error) {
 func (s *Store) GetKey(key string) (string, error) {
 	s.mu.RLock()
 	activeSegment := s.ActiveSegment
-	s.mu.RUnlock()
+	s.mu.RUnlock() // *can* drop the lock once i copied the pointer
 
 	val, err := activeSegment.Lookup(key)
 	if err == nil {
