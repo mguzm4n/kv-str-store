@@ -85,8 +85,33 @@ func (s *Store) PutKey(key, value string) error {
 
 func (s *Store) GetKey(key string) (string, error) {
 	activeSegment := s.ActiveSegment
-	activeSegment.mu.Lock()
-	defer activeSegment.mu.Unlock()
+	activeSegment.mu.RLock()
+
+	lookup := func(segment *Segment, key string) (string, error) {
+		segment.mu.RLock()
+		defer segment.mu.RUnlock()
+		offset, ok := segment.keyToOffsetMap[key]
+		if !ok {
+			return "", errors.New("No value found")
+		}
+		return GetKey(segment.keyToOffsetMap, segment.file, key, offset)
+	}
+
+	val, err := lookup(activeSegment, key)
+	if err == nil {
+		return val, nil
+	}
+
+	s.mu.RLock()
+	defer s.mu.RUnlock()
+	for i := len(s.Segments) - 1; i >= 0; i-- {
+		segment := s.Segments[i]
+		val, err := lookup(segment, key)
+		if err == nil {
+			return val, nil
+		}
+	}
+
 	return "", nil
 }
 
