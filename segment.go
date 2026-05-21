@@ -26,5 +26,5 @@ func (s *Segment) Lookup(key string) (string, error) {
 	if !ok {
 		return "", errors.New("No value found")
 	}
-	return GetKey(s.keyToOffsetMap, s.file, key, offset)
+	return GetKey(s.file, key, offset)
 }
