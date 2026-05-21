@@ -84,8 +84,9 @@ func (s *Store) PutKey(key, value string) error {
 }
 
 func (s *Store) GetKey(key string) (string, error) {
+	s.mu.RLock()
 	activeSegment := s.ActiveSegment
-	activeSegment.mu.RLock()
+	s.mu.RUnlock()
 
 	lookup := func(segment *Segment, key string) (string, error) {
 		segment.mu.RLock()
