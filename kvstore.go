@@ -11,19 +11,6 @@ import (
 var KEY_SIZE_BYTES = 2
 var VALUE_SIZE_BYTES = 4
 
-const (
-	KB               = 1 << 10
-	MB               = 1 << 20
-	SEGMENT_CAPACITY = 64 * MB
-)
-
-type Segment struct {
-	mu             sync.RWMutex
-	keyToOffsetMap map[string]int64
-	file           *os.File
-	size           int64
-}
-
 type Store struct {
 	mu            sync.RWMutex
 	Segments      []*Segment
@@ -64,7 +51,7 @@ func (s *Store) PutKey(key, value string) error {
 	s.mu.Lock()
 
 	if atomic.LoadInt64(&s.ActiveSegment.size) > SEGMENT_CAPACITY { // soft limit - can be an outdated check immediately after this instruction on multiple putKeys
-		s.ActiveSegment.file.Close()
+		s.ActiveSegment.file.Close() // not close but mark as read only
 		s.Segments = append(s.Segments, s.ActiveSegment)
 		activeSegment, _ := s.newSegment("segment")
 		s.ActiveSegment = activeSegment
@@ -81,16 +68,6 @@ func (s *Store) PutKey(key, value string) error {
 	}
 	atomic.AddInt64(&currentActiveSeg.size, int64(nBytes))
 	return nil
-}
-
-func (s *Segment) Lookup(key string) (string, error) {
-	s.mu.RLock()
-	offset, ok := s.keyToOffsetMap[key]
-	s.mu.RUnlock() // multiple reads for a file is safe at os-level
-	if !ok {
-		return "", errors.New("No value found")
-	}
-	return GetKey(s.keyToOffsetMap, s.file, key, offset)
 }
 
 func (s *Store) GetKey(key string) (string, error) {
