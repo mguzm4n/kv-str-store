@@ -21,7 +21,7 @@ type Segment struct {
 }
 
 func NewSegment(basename string, correlative int) (*Segment, error) {
-	fname := fmt.Sprintf("%s-%d", basename, correlative)
+	fname := fmt.Sprintf("%s-%d.log", basename, correlative)
 
 	segment := &Segment{
 		keyToOffsetMap: make(map[string]int64),

@@ -20,7 +20,7 @@ func (s *Store) newSegment() (*Segment, error) {
 	return NewSegment("segment", size)
 }
 
-func New() (*Store, error) {
+func NewStore() (*Store, error) {
 	store := &Store{}
 	store.Segments = make([]*Segment, 0)
 	// TODO: recover state from disk
