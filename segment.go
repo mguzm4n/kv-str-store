@@ -27,7 +27,8 @@ func NewSegment(basename string, correlative int) (*Segment, error) {
 		keyToOffsetMap: make(map[string]int64),
 	}
 
-	f, err := os.OpenFile(fname, os.O_APPEND|os.O_CREATE, 0644)
+	// read and write paths + flags using the same handler -> add |os.O_APPEND later
+	f, err := os.OpenFile(fname, os.O_RDWR|os.O_CREATE, 0644)
 	if err != nil {
 		return nil, errors.New("Couldn't create new segment")
 	}
