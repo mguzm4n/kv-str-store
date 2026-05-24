@@ -42,6 +42,7 @@ func PutKey(keyToByteOffset map[string]int64, file *os.File, key, value string) 
 	return uint64(totalSize), nil
 }
 
+// TODO: add logging indicator (if debug or test, log)
 func GetKey(file *os.File, key string, offset int64) (string, error) {
 	var err error
 	// whence -> from where do i start reading/writing bytes?
@@ -57,8 +58,6 @@ func GetKey(file *os.File, key string, offset int64) (string, error) {
 	fmt.Printf("keySize=%d\n", keySize)
 
 	err = binary.Read(r, binary.BigEndian, &valueSize)
-	valueSizeBuffer := make([]byte, VALUE_SIZE_BYTES)
-	_, err = file.Read(valueSizeBuffer)
 	if err != nil {
 		log.Fatalf("Failed to read value size: %v", err)
 	}
