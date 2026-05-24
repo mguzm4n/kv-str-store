@@ -39,7 +39,7 @@ func (s *Store) PutKey(key, value string) error {
 	s.mu.Lock()
 
 	if atomic.LoadInt64(&s.ActiveSegment.size) > SEGMENT_CAPACITY { // soft limit - can be an outdated check immediately after this instruction on multiple putKeys
-		s.ActiveSegment.file.Close() // not close but mark as read only
+		s.ActiveSegment.file.Close() // TODO: !!! not close but mark as read only
 		s.Segments = append(s.Segments, s.ActiveSegment)
 		activeSegment, _ := s.newSegment()
 		s.ActiveSegment = activeSegment
