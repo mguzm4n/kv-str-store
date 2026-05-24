@@ -21,14 +21,14 @@ func initMap() {
 func main() {
 	// keyToByteOffset := make(map[string]int64)
 
-	filePath := "memory.log"
-	file, err := os.OpenFile(filePath, os.O_APPEND, 0644)
-	if err == nil {
-		initMap()
-		file.Close()
-	} else {
-		initFile(filePath)
-	}
+	// filePath := "memory.log"
+	// file, err := os.OpenFile(filePath, os.O_APPEND, 0644)
+	// if err == nil {
+	// 	initMap()
+	// 	file.Close()
+	// } else {
+	// 	initFile(filePath)
+	// }
 
 	// file, err = os.OpenFile(filePath, os.O_APPEND, 0644)
 	// PutKey(keyToByteOffset, file, "100", "{ value1: 'value1', value2: 'value2' }")
@@ -39,4 +39,5 @@ func main() {
 
 	// val, err = GetKey(keyToByteOffset, file, "100")
 	// fmt.Printf("%s\n", val)
+	cli()
 }
