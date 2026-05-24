@@ -43,50 +43,40 @@ func PutKey(keyToByteOffset map[string]int64, file *os.File, key, value string) 
 }
 
 func GetKey(file *os.File, key string, offset int64) (string, error) {
-	// offset, ok := keyToByteOffset[key]
-	// if !ok {
-	// 	return "", errors.New("Value not in memory")
-	// }
-
+	var err error
 	// whence -> from where do i start reading/writing bytes?
-	_, err := file.Seek(offset, io.SeekStart)
-	if err != nil {
-		log.Fatalf("Failed to seek to offset: %v", err)
-	}
 
-	keySizeBuffer := make([]byte, KEY_SIZE_BYTES) // 2 bytes -> uint16
-	_, err = file.Read(keySizeBuffer)
+	r := io.NewSectionReader(file, offset, math.MaxInt64)
+	var keySize int16   // 2 bytes buffer
+	var valueSize int32 // 4 bytes buffer
+
+	err = binary.Read(r, binary.BigEndian, &keySize)
 	if err != nil {
 		log.Fatalf("Failed to read key size: %v", err)
 	}
-
-	keySize := binary.BigEndian.Uint16(keySizeBuffer) // bytes -> big endian encoding
-
 	fmt.Printf("keySize=%d\n", keySize)
 
+	err = binary.Read(r, binary.BigEndian, &valueSize)
 	valueSizeBuffer := make([]byte, VALUE_SIZE_BYTES)
 	_, err = file.Read(valueSizeBuffer)
 	if err != nil {
-		log.Fatalf("Failed to read content size: %v", err)
+		log.Fatalf("Failed to read value size: %v", err)
 	}
-
-	valueSize := binary.BigEndian.Uint32(valueSizeBuffer)
-
 	fmt.Printf("valueSize=%d\n", valueSize)
 
 	keyReadBuffer := make([]byte, keySize)
-	_, err = file.Read(keyReadBuffer)
+	_, err = io.ReadFull(r, keyReadBuffer)
 	if err != nil {
 		log.Fatalf("Failed to read key: %v", err)
 	}
 	fmt.Printf("key=%s\n", keyReadBuffer)
 
 	valueReadBuffer := make([]byte, valueSize)
-	_, err = file.Read(valueReadBuffer)
+	_, err = io.ReadFull(r, valueReadBuffer)
 	if err != nil {
 		log.Fatalf("Failed to read value: %v", err)
 	}
-	fmt.Printf("key=%s\n", valueReadBuffer)
+	fmt.Printf("value=%s\n", valueReadBuffer)
 
 	return string(valueReadBuffer), nil
 }
