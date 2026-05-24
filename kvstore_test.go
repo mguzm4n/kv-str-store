@@ -48,7 +48,7 @@ func TestKVStore(testing *testing.T) {
 		}
 		result, err := store.GetKey(test.getParam)
 		if err != nil {
-			testing.Log("Test failed")
+			testing.Logf("Test failed with error: %s", err)
 			testing.FailNow()
 		}
 		if test.expected != result {

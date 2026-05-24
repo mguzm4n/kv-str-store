@@ -88,5 +88,5 @@ func GetKey(file *os.File, key string, offset int64) (string, error) {
 	}
 	fmt.Printf("key=%s\n", valueReadBuffer)
 
-	return "", nil
+	return string(valueReadBuffer), nil
 }
