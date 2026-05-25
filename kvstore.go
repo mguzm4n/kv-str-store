@@ -39,7 +39,7 @@ func (s *Store) PutKey(key, value string) error {
 	s.mu.Lock()
 
 	if atomic.LoadInt64(&s.ActiveSegment.size) > SEGMENT_CAPACITY { // soft limit - can be an outdated check immediately after this instruction on multiple putKeys
-		s.ActiveSegment.file.Close() // TODO: !!! not close but mark as read only
+		// !!! file "closed" for writing
 		s.Segments = append(s.Segments, s.ActiveSegment)
 		activeSegment, _ := s.newSegment()
 		s.ActiveSegment = activeSegment
@@ -72,13 +72,13 @@ func (s *Store) GetKey(key string) (string, error) {
 	defer s.mu.RUnlock()
 	for i := len(s.Segments) - 1; i >= 0; i-- {
 		segment := s.Segments[i]
-		val, err := segment.Lookup(key)
+		val, err = segment.Lookup(key)
 		if err == nil {
 			return val, nil
 		}
 	}
 
-	return "", nil
+	return "", err
 }
 
 func (s *Store) compact() {
