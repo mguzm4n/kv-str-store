@@ -5,7 +5,7 @@ import (
 )
 
 func cli() {
-	store, _ := NewStore()
+	store, _ := NewStore("./")
 
 	shell := ishell.New()
 	shell.Println("Interactive Shell (type 'help' for commands)")
