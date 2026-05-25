@@ -10,7 +10,7 @@ import (
 	"os"
 )
 
-func PutKey(keyToByteOffset map[string]int64, file *os.File, key, value string) (uint64, error) {
+func PutKey(file *os.File, key, value string) (uint64, error) {
 	if len(key) > math.MaxUint16 {
 		return 0, errors.New("key size exceeds maximum for 2^16 (65535 bytes)")
 	}
@@ -28,17 +28,11 @@ func PutKey(keyToByteOffset map[string]int64, file *os.File, key, value string) 
 	copy(buffer[6:keyEnd], key)
 	copy(buffer[keyEnd:valueEnd], value)
 
-	startPos, err := file.Seek(0, io.SeekEnd)
-	if err != nil {
-		log.Fatalf("Failed to seek to end of file: %v", err)
-	}
-
 	bytesWritten, err := file.Write(buffer)
 	if err != nil {
-		log.Fatal("Couldn't write to disk")
+		log.Fatal("Couldn't write to disk") // TODO: change
 	}
-	keyToByteOffset[key] = startPos
-	fmt.Printf("written: %d with startingPos: %d\n", bytesWritten, startPos)
+	fmt.Printf("written: %d\n", bytesWritten)
 	return uint64(totalSize), nil
 }
 
@@ -53,27 +47,27 @@ func GetKey(file *os.File, key string, offset int64) (string, error) {
 
 	err = binary.Read(r, binary.BigEndian, &keySize)
 	if err != nil {
-		log.Fatalf("Failed to read key size: %v", err)
+		log.Fatalf("Failed to read key size: %v", err) // TODO: change
 	}
 	fmt.Printf("keySize=%d\n", keySize)
 
 	err = binary.Read(r, binary.BigEndian, &valueSize)
 	if err != nil {
-		log.Fatalf("Failed to read value size: %v", err)
+		log.Fatalf("Failed to read value size: %v", err) // TODO: change
 	}
 	fmt.Printf("valueSize=%d\n", valueSize)
 
 	keyReadBuffer := make([]byte, keySize)
 	_, err = io.ReadFull(r, keyReadBuffer)
 	if err != nil {
-		log.Fatalf("Failed to read key: %v", err)
+		log.Fatalf("Failed to read key: %v", err) // TODO: change
 	}
 	fmt.Printf("key=%s\n", keyReadBuffer)
 
 	valueReadBuffer := make([]byte, valueSize)
 	_, err = io.ReadFull(r, valueReadBuffer)
 	if err != nil {
-		log.Fatalf("Failed to read value: %v", err)
+		log.Fatalf("Failed to read value: %v", err) // TODO: change
 	}
 	fmt.Printf("value=%s\n", valueReadBuffer)
 
