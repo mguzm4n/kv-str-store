@@ -68,8 +68,9 @@ func TestKVStore(t *testing.T) {
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			t.TempDir()
-			store, _ := NewStore()
+			dir := t.TempDir()
+			store, _ := NewStore(dir)
+			defer store.CloseSegments()
 			for _, payload := range test.payloads {
 				err := store.PutKey(payload.key, payload.value)
 				if err != nil {

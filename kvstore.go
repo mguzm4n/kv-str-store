@@ -10,6 +10,7 @@ var KEY_SIZE_BYTES = 2
 var VALUE_SIZE_BYTES = 4
 
 type Store struct {
+	root          string
 	mu            sync.RWMutex
 	Segments      []*Segment
 	ActiveSegment *Segment
@@ -17,11 +18,13 @@ type Store struct {
 
 func (s *Store) newSegment() (*Segment, error) {
 	size := len(s.Segments) // !!! assume we hold the store lock
-	return NewSegment("segment", size)
+	return NewSegment(s.root+"/segment", size)
 }
 
-func NewStore() (*Store, error) {
+func NewStore(root string) (*Store, error) {
+
 	store := &Store{}
+	store.root = root
 	store.Segments = make([]*Segment, 0)
 	// TODO: recover state from disk
 
@@ -50,11 +53,15 @@ func (s *Store) PutKey(key, value string) error {
 	defer currentActiveSeg.mu.Unlock()
 	s.mu.Unlock() // !!! we can only unlock once we secured the active segment
 
-	nBytes, err := PutKey(currentActiveSeg.keyToOffsetMap, currentActiveSeg.file, key, value)
+	nBytes, err := PutKey(currentActiveSeg.file, key, value)
+
 	if err != nil {
 		return err
 	}
+
+	currentActiveSeg.keyToOffsetMap[key] = atomic.LoadInt64(&currentActiveSeg.size)
 	atomic.AddInt64(&currentActiveSeg.size, int64(nBytes))
+
 	return nil
 }
 
@@ -83,4 +90,21 @@ func (s *Store) GetKey(key string) (string, error) {
 
 func (s *Store) compact() {
 
+}
+
+func (s *Store) CloseSegments() error {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+
+	if s.ActiveSegment != nil && s.ActiveSegment.file != nil {
+		s.ActiveSegment.file.Close()
+	}
+
+	// Close any older, sealed segments
+	for _, seg := range s.Segments {
+		if seg.file != nil {
+			seg.file.Close()
+		}
+	}
+	return nil
 }
