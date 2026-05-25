@@ -16,39 +16,39 @@ type SyncTest0 struct {
 
 func TestKVStore(t *testing.T) {
 	tests := []SyncTest0{
-		// {
-		// 	name: "sets exactly one key and one value exactly",
-		// 	payloads: []Payload{
-		// 		{key: "id:10", value: "{\"userId\": 10, \"name\":\"John\"}"},
-		// 	},
-		// 	expected: map[string]string{
-		// 		"id:10": "{\"userId\": 10, \"name\":\"John\"}",
-		// 	},
-		// },
-		// {
-		// 	name: "sets exactly one key but overwrites it multiple times",
-		// 	payloads: []Payload{
-		// 		{key: "id:10", value: "{\"userId\": 10, \"name\":\"John\"}"},
-		// 		{key: "id:10", value: "{\"userId\": 10, \"name\":\"John Doe\"}"},
-		// 		{key: "id:10", value: "{\"userId\": 10, \"name\":\"Johnny Doe\"}"},
-		// 	},
-		// 	expected: map[string]string{
-		// 		"id:10": "{\"userId\": 10, \"name\":\"Johnny Doe\"}",
-		// 	},
-		// },
-		// {
-		// 	name: "handles multiple distinct keys correctly",
-		// 	payloads: []Payload{
-		// 		{key: "A", value: "valueA"},
-		// 		{key: "B", value: "valueB"},
-		// 		{key: "C", value: "valueC"},
-		// 	},
-		// 	expected: map[string]string{
-		// 		"A": "valueA",
-		// 		"B": "valueB",
-		// 		"C": "valueC",
-		// 	},
-		// },
+		{
+			name: "sets exactly one key and one value exactly",
+			payloads: []Payload{
+				{key: "id:10", value: "{\"userId\": 10, \"name\":\"John\"}"},
+			},
+			expected: map[string]string{
+				"id:10": "{\"userId\": 10, \"name\":\"John\"}",
+			},
+		},
+		{
+			name: "sets exactly one key but overwrites it multiple times",
+			payloads: []Payload{
+				{key: "id:10", value: "{\"userId\": 10, \"name\":\"John\"}"},
+				{key: "id:10", value: "{\"userId\": 10, \"name\":\"John Doe\"}"},
+				{key: "id:10", value: "{\"userId\": 10, \"name\":\"Johnny Doe\"}"},
+			},
+			expected: map[string]string{
+				"id:10": "{\"userId\": 10, \"name\":\"Johnny Doe\"}",
+			},
+		},
+		{
+			name: "handles multiple distinct keys correctly",
+			payloads: []Payload{
+				{key: "A", value: "valueA"},
+				{key: "B", value: "valueB"},
+				{key: "C", value: "valueC"},
+			},
+			expected: map[string]string{
+				"A": "valueA",
+				"B": "valueB",
+				"C": "valueC",
+			},
+		},
 		{
 			name: "getting a non-existent key returns error",
 			payloads: []Payload{
@@ -57,13 +57,13 @@ func TestKVStore(t *testing.T) {
 			expected:    map[string]string{"Z": ""},
 			expectError: true,
 		},
-		// {
-		// 	name: "empty values are stored and retrieved correctly",
-		// 	payloads: []Payload{
-		// 		{key: "empty_val_key", value: ""},
-		// 	},
-		// 	expected: map[string]string{"empty_val_key": ""},
-		// },
+		{
+			name: "empty values are stored and retrieved correctly",
+			payloads: []Payload{
+				{key: "empty_val_key", value: ""},
+			},
+			expected: map[string]string{"empty_val_key": ""},
+		},
 	}
 
 	for _, test := range tests {
