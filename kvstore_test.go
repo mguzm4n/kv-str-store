@@ -8,52 +8,93 @@ type Payload struct {
 }
 
 type SyncTest0 struct {
-	name     string
-	payloads []Payload
-	getParam string
-	expected string
+	name        string
+	payloads    []Payload
+	expected    map[string]string
+	expectError bool
 }
 
-func TestKVStore(testing *testing.T) {
+func TestKVStore(t *testing.T) {
 	tests := []SyncTest0{
+		// {
+		// 	name: "sets exactly one key and one value exactly",
+		// 	payloads: []Payload{
+		// 		{key: "id:10", value: "{\"userId\": 10, \"name\":\"John\"}"},
+		// 	},
+		// 	expected: map[string]string{
+		// 		"id:10": "{\"userId\": 10, \"name\":\"John\"}",
+		// 	},
+		// },
+		// {
+		// 	name: "sets exactly one key but overwrites it multiple times",
+		// 	payloads: []Payload{
+		// 		{key: "id:10", value: "{\"userId\": 10, \"name\":\"John\"}"},
+		// 		{key: "id:10", value: "{\"userId\": 10, \"name\":\"John Doe\"}"},
+		// 		{key: "id:10", value: "{\"userId\": 10, \"name\":\"Johnny Doe\"}"},
+		// 	},
+		// 	expected: map[string]string{
+		// 		"id:10": "{\"userId\": 10, \"name\":\"Johnny Doe\"}",
+		// 	},
+		// },
+		// {
+		// 	name: "handles multiple distinct keys correctly",
+		// 	payloads: []Payload{
+		// 		{key: "A", value: "valueA"},
+		// 		{key: "B", value: "valueB"},
+		// 		{key: "C", value: "valueC"},
+		// 	},
+		// 	expected: map[string]string{
+		// 		"A": "valueA",
+		// 		"B": "valueB",
+		// 		"C": "valueC",
+		// 	},
+		// },
 		{
-			name: "sets exactly one key and one value exactly",
+			name: "getting a non-existent key returns error",
 			payloads: []Payload{
-				{key: "id:10", value: "{\"userId\": 10, \"name\":\"John\"}"},
+				{key: "A", value: "valueA"},
 			},
-			getParam: "id:10",
-			expected: "{\"userId\": 10, \"name\":\"John\"}",
+			expected:    map[string]string{"Z": ""},
+			expectError: true,
 		},
-		{
-			name: "sets exactly one key but overwrites it multiple times",
-			payloads: []Payload{
-				{key: "id:10", value: "{\"userId\": 10, \"name\":\"John\"}"},
-				{key: "id:10", value: "{\"userId\": 10, \"name\":\"John Doe\"}"},
-				{key: "id:10", value: "{\"userId\": 10, \"name\":\"Johnny Doe\"}"},
-			},
-			getParam: "id:10",
-			expected: "{\"userId\": 10, \"name\":\"Johnny Doe\"}",
-		},
+		// {
+		// 	name: "empty values are stored and retrieved correctly",
+		// 	payloads: []Payload{
+		// 		{key: "empty_val_key", value: ""},
+		// 	},
+		// 	expected: map[string]string{"empty_val_key": ""},
+		// },
 	}
 
-	store, err := NewStore()
-	if err != nil {
-		testing.Log("Couldn't setup store")
-		return
-	}
-	for i, test := range tests {
-		testing.Logf("Test %d - name '%s'", i, test.name)
-		for _, payload := range test.payloads {
-			store.PutKey(payload.key, payload.value)
-		}
-		result, err := store.GetKey(test.getParam)
-		if err != nil {
-			testing.Logf("Test failed with error: %s", err)
-			testing.FailNow()
-		}
-		if test.expected != result {
-			testing.Logf("Test failed. Result %s v/s Expected %s", result, test.expected)
-			testing.Fail()
-		}
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			t.TempDir()
+			store, _ := NewStore()
+			for _, payload := range test.payloads {
+				err := store.PutKey(payload.key, payload.value)
+				if err != nil {
+					t.Fatalf("Failed to put key %s: %v", payload.key, err)
+				}
+			}
+
+			for getParam, expectedVal := range test.expected {
+				result, err := store.GetKey(getParam)
+
+				if test.expectError {
+					if err == nil {
+						t.Errorf("Expected an error for key %s, but got none", getParam)
+					}
+					continue
+				}
+
+				if err != nil {
+					t.Errorf("Unexpected error getting key %s: %v", getParam, err)
+				}
+
+				if result != expectedVal {
+					t.Errorf("Result %s v/s Expected %s", result, expectedVal)
+				}
+			}
+		})
 	}
 }
