@@ -16,7 +16,14 @@ Based off: Designing Data-Intensive Apps (Kleppman, 2017, pp. 70-75).
 
 1. Sync reads and writes
 2. Segment sizes
-```
-go test ./internal/store -run TestStore_RotatesActiveSegmentWhenFull -count=1 -v
-```
 3. Concurrent reads and writes
+
+### Running tests
+
+Use a pattern to target the tests you need.
+```
+go test ./internal/store -run TestStore_* -count=1 -v
+```
+
+These will target the segment tests since the match is by function.
+Also, modify the segment size so it doesn't create big segment files when testing, this inside `internal/store/segment.go`.
