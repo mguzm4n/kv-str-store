@@ -70,6 +70,7 @@ func TestKVStore(t *testing.T) {
 		},
 	}
 
+	// sequential reads
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
 			dir := t.TempDir()
@@ -102,4 +103,5 @@ func TestKVStore(t *testing.T) {
 			}
 		})
 	}
+
 }

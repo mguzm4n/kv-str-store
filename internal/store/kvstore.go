@@ -100,7 +100,6 @@ func (s *Store) CloseSegments() error {
 		s.ActiveSegment.file.Close()
 	}
 
-	// Close any older, sealed segments
 	for _, seg := range s.Segments {
 		if seg.file != nil {
 			seg.file.Close()
