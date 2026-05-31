@@ -16,4 +16,7 @@ Based off: Designing Data-Intensive Apps (Kleppman, 2017, pp. 70-75).
 
 1. Sync reads and writes
 2. Segment sizes
+```
+go test ./internal/store -run TestStore_RotatesActiveSegmentWhenFull -count=1 -v
+```
 3. Concurrent reads and writes
